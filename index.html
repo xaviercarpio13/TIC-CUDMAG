@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Detección de Ambigüedad en Requisitos</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+      margin: 2rem;
+      background-color: #f4f7f9;
+    }
+
+    h2,
+    h3 {
+      color: #2c3e50;
+    }
+
+    .container {
+      background-color: white;
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    textarea,
+    select,
+    input[type="text"] {
+      width: 100%;
+      padding: 0.75rem;
+      margin: 0.5rem 0 1.5rem 0;
+      border: 1px solid #dcdcdc;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+
+    button {
+      display: block;
+      width: 100%;
+      padding: 0.8rem 1rem;
+      margin-top: 1rem;
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    .resultado {
+      margin-top: 2rem;
+      padding: 1.5rem;
+      border-left-width: 5px;
+      border-left-style: solid;
+      background-color: #f9f9f9;
+    }
+
+    .resultado.ambiguo {
+      border-left-color: #e74c3c;
+    }
+
+    .resultado.no-ambiguo {
+      border-left-color: #2ecc71;
+    }
+
+    .dynamic-text {
+      background-color: #e6f7ff;
+      padding: 3px 7px;
+      border-radius: 4px;
+      font-style: italic;
+      font-weight: bold;
+      color: #0056b3;
+    }
+
+    label,
+    p {
+      font-weight: 500;
+      color: #34495e;
+    }
+
+    .formulario {
+      display: none;
+    }
+
+    .formulario.activo {
+      display: block;
+    }
+
+    .ejemplo {
+      background-color: #f8f9fa;
+      padding: 10px;
+      border-left: 3px solid #28a745;
+      margin: 10px 0;
+      font-style: italic;
+      color: #495057;
+    }
+
+    .dimension {
+      margin: 20px 0;
+      padding: 15px;
+      border: 1px solid #e9ecef;
+      border-radius: 5px;
+    }
+
+    .dimension h4 {
+      color: #495057;
+      margin-top: 0;
+    }
+
+    .checkbox-group {
+      margin: 10px 0;
+    }
+
+    .checkbox-group input[type="radio"] {
+      width: auto;
+      margin-right: 8px;
+    }
+
+    .checkbox-group label {
+      display: inline;
+      font-weight: normal;
+      margin-left: 5px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+    <h2>Formulario para Evaluación de Ambigüedad en Requisitos</h2>
+
+    <label for="requisito">1. Escriba el requerimiento completo:</label>
+    <textarea id="requisito" rows="3"
+      placeholder="Ej: Si no hay stock disponible, el sistema debe notificar al usuario."></textarea>
+
+    <label for="tipoEvaluacion">2. Seleccione el tipo de evaluación:</label>
+    <select id="tipoEvaluacion" onchange="mostrarFormulario()">
+      <option value="">Seleccione una opción</option>
+      <option value="condicional">Ambigüedad Condicional</option>
+      <option value="general">Ambigüedades Generales</option>
+    </select>
+
+    <!-- FORMULARIO PARA AMBIGÜEDAD CONDICIONAL -->
+    <div id="formularioCondicional" class="formulario">
+      <label for="antecedente">3. Escriba el antecedente (condición):</label>
+      <input type="text" id="antecedente" oninput="actualizarTextoDinamico()" placeholder="Ej: No hay stock disponible">
+
+      <label for="consecuente">4. Escriba el consecuente (acción):</label>
+      <input type="text" id="consecuente" oninput="actualizarTextoDinamico()" placeholder="Ej: Notificar al usuario">
+
+      <h3>Preguntas de Evaluación</h3>
+
+      <div class="dimension">
+        <h4>1.1. Dimensión: Relación lógica (necesidad y/o suficiencia)</h4>
+        <p>¿Cuál es la intención lógica entre la condición y la consecuencia?</p>
+        <div class="checkbox-group">
+          <input type="radio" id="logicaA" name="logica" value="A">
+          <label for="logicaA" id="opcionA">A. Si la condición ocurre, la consecuencia debe ocurrir (Solo
+            suficiente)</label>
+        </div>
+        <div class="checkbox-group">
+          <input type="radio" id="logicaB" name="logica" value="B">
+          <label for="logicaB" id="opcionB">B. La consecuencia ocurre únicamente si ocurre la condición (Suficiente y
+            necesaria)</label>
+        </div>
+        <div class="checkbox-group">
+          <input type="radio" id="logicaC" name="logica" value="C">
+          <label for="logicaC">C. La consecuencia puede ocurrir incluso si no se cumple la condición (No hay relación
+            lógica estricta)</label>
+        </div>
+        <div class="checkbox-group">
+          <input type="radio" id="logicaD" name="logica" value="D">
+          <label for="logicaD">D. No estoy completamente seguro</label>
+        </div>
+      </div>
+
+      <div class="dimension">
+        <h4>1.2. Dimensión: Relación temporal</h4>
+        <p>¿En qué momento debe ocurrir la consecuencia respecto a la condición?</p>
+        <div class="checkbox-group">
+          <input type="radio" id="temporalidadA" name="temporalidad" value="A">
+          <label for="temporalidadA">A. Mientras la condición se mantiene verdadera</label>
+        </div>
+        <div class="checkbox-group">
+          <input type="radio" id="temporalidadB" name="temporalidad" value="B">
+          <label for="temporalidadB">B. Inmediatamente después de que se cumpla la condición</label>
+        </div>
+        <div class="checkbox-group">
+          <input type="radio" id="temporalidadC" name="temporalidad" value="C">
+          <label for="temporalidadC">C. En algún momento futuro no determinado tras la condición</label>
+        </div>
+        <div class="checkbox-group">
+          <input type="radio" id="temporalidadD" name="temporalidad" value="D">
+          <label for="temporalidadD">D. El tiempo no es importante para este requisito</label>
+        </div>
+        <div class="checkbox-group">
+          <input type="radio" id="temporalidadE" name="temporalidad" value="E">
+          <label for="temporalidadE">E. No estoy completamente seguro</label>
+        </div>
+      </div>
+
+      <div class="dimension">
+        <h4>1.3. Consistencia lógica</h4>
+        <p>¿Qué espera que ocurra si...?</p>
+
+        <p id="label-caso1">Si la condición <span class="dynamic-text dynamic-antecedente">...</span> ocurre, ¿la acción
+          <span class="dynamic-text dynamic-consecuente">...</span> debe ocurrir?
+        </p>
+        <select id="caso1">
+          <option value="">Seleccione una opción</option>
+          <option value="si">Sí</option>
+          <option value="no">No</option>
+          <option value="ns">No estoy seguro</option>
+        </select>
+
+        <p id="label-caso2">Si la condición <span class="dynamic-text dynamic-antecedente">...</span> NO ocurre, ¿la
+          acción <span class="dynamic-text dynamic-consecuente">...</span> debe ocurrir?</p>
+        <select id="caso2">
+          <option value="">Seleccione una opción</option>
+          <option value="si">Sí</option>
+          <option value="no">No</option>
+          <option value="ns">No estoy seguro</option>
+        </select>
+      </div>
+
+      <button onclick="evaluarAmbiguedadCondicional()">Evaluar Ambigüedad Condicional</button>
+    </div>
+
+    <!-- FORMULARIO PARA AMBIGÜEDADES GENERALES -->
+    <div id="formularioGeneral" class="formulario">
+      <h3>Evaluación de Ambigüedades Generales</h3>
+
+      <div class="dimension">
+        <h4>2. Ambigüedad léxica</h4>
+        <p>Palabras con múltiple significado</p>
+        <p>¿Alguna palabra o frase del requisito podría tener <strong>más de un significado</strong> en el contexto del
+          sistema?</p>
+        <div class="ejemplo">
+          Ejemplo: adecuado, apropiado,
+          rápido, pronto, eficiente,
+          óptimo, perfecto, tolerante
+          suficiente, aceptable, razonable, seguro, confiable, flexible, adaptable,
+          económico, barato, amigable, comprensible, usable, bueno/buena, bonito/bonita
+
+        </div>
+        <div class="checkbox-group">
+          <input type="radio" id="lexicaSi" name="lexica" value="si">
+          <label for="lexicaSi">Sí</label>
+        </div>
+        <div class="checkbox-group">
+          <input type="radio" id="lexicaNo" name="lexica" value="no">
+          <label for="lexicaNo">No</label>
+        </div>
+        <div class="checkbox-group">
+          <input type="radio" id="lexicaNs" name="lexica" value="ns">
+          <label for="lexicaNs">No estoy seguro</label>
+        </div>
+      </div>
+
+      <div class="dimension">
+        <h4>3. Ambigüedad sintáctica</h4>
+        <p>Estructura de oración o párrafo confusa</p>
+
+        <p>¿Puede la oración entenderse de <strong>más de una forma gramaticalmente válida</strong>?</p>
+        <div class="ejemplo">
+          Ejemplo: "El sistema debe validar y enviar el formulario al servidor con autenticación"
+          ¿Qué tiene autenticación: el servidor o el formulario?
+        </div>
+        <div class="checkbox-group">
+          <input type="radio" id="sintacticaSi" name="sintactica" value="si">
+          <label for="sintacticaSi">Sí</label>
+        </div>
+        <div class="checkbox-group">
+          <input type="radio" id="sintacticaNo" name="sintactica" value="no">
+          <label for="sintacticaNo">No</label>
+        </div>
+        <div class="checkbox-group">
+          <input type="radio" id="sintacticaNs" name="sintactica" value="ns">
+          <label for="sintacticaNs">No estoy seguro</label>
+        </div>
+      </div>
+
+      <div class="dimension">
+        <h4>4. Ambigüedad referencial</h4>
+        <p>Pronombres o sustantivos imprecisos</p>
+
+        <p>¿Hay pronombres, adjetivos o referencias cuya identidad <strong>no queda clara</strong>?</p>
+        <div class="ejemplo">
+          Ejemplo: él, ella, su, sus, ti, este, esa, aquel, alguno, ninguno, cualquiera, cualquier, cada, cosa, objeto,
+          situación, elemento, recurso, dicho.
+
+        </div>
+        <div class="checkbox-group">
+          <input type="radio" id="referencialSi" name="referencial" value="si">
+          <label for="referencialSi">Sí</label>
+        </div>
+        <div class="checkbox-group">
+          <input type="radio" id="referencialNo" name="referencial" value="no">
+          <label for="referencialNo">No</label>
+        </div>
+        <div class="checkbox-group">
+          <input type="radio" id="referencialNs" name="referencial" value="ns">
+          <label for="referencialNs">No estoy seguro</label>
+        </div>
+      </div>
+
+      <div class="dimension">
+        <h4>5. Ambigüedad por Cuantificadores vagos / lenguaje impreciso</h4>
+        <p>Expresiones vagas sin definición concreta</p>
+        <p>¿Se utilizan <strong>cuantificadores generales</strong> o frases vagas sin definición concreta?</p>
+        <div class="ejemplo">
+          Ejemplo: poco, mucho, bastantes, algunas, varios, algunos, muchos, pocos, todos, cualquier, la mayoría, una
+          minoría, a menudo, generalmente, ocasionalmente, casi siempre
+        </div>
+        <div class="checkbox-group">
+          <input type="radio" id="cuantificadoresSi" name="cuantificadores" value="si">
+          <label for="cuantificadoresSi">Sí</label>
+        </div>
+        <div class="checkbox-group">
+          <input type="radio" id="cuantificadoresNo" name="cuantificadores" value="no">
+          <label for="cuantificadoresNo">No</label>
+        </div>
+        <div class="checkbox-group">
+          <input type="radio" id="cuantificadoresNs" name="cuantificadores" value="ns">
+          <label for="cuantificadoresNs">No estoy seguro</label>
+        </div>
+      </div>
+
+      <div class="dimension">
+        <h4>6. Ambigüedad por uso de voz pasiva</h4>
+        <p>Omisión del agente semántico</p>
+        <p>¿Hay oraciones en las que <strong>no se especifica quién realiza la acción</strong>?</p>
+        <div class="ejemplo">
+          Ejemplo: "El archivo será eliminado" → ¿por quién?
+        </div>
+        <div class="checkbox-group">
+          <input type="radio" id="vozPasivaSi" name="vozPasiva" value="si">
+          <label for="vozPasivaSi">Sí</label>
+        </div>
+        <div class="checkbox-group">
+          <input type="radio" id="vozPasivaNo" name="vozPasiva" value="no">
+          <label for="vozPasivaNo">No</label>
+        </div>
+        <div class="checkbox-group">
+          <input type="radio" id="vozPasivaNs" name="vozPasiva" value="ns">
+          <label for="vozPasivaNs">No estoy seguro</label>
+        </div>
+      </div>
+
+      <div class="dimension">
+        <h4>7. Ambigüedad por contexto incompleto u omitido</h4>
+        <p>Falta de condiciones, excepciones o valores necesarios</p>
+        <p>¿Faltan condiciones, excepciones o valores necesarios para comprender completamente el comportamiento
+          esperado?</p>
+        <div class="ejemplo">
+          Ejemplo: "El sistema debe enviar una alerta cuando haya riesgo" → ¿Qué es riesgo? ¿Cómo se mide?
+        </div>
+        <div class="checkbox-group">
+          <input type="radio" id="contextoSi" name="contexto" value="si">
+          <label for="contextoSi">Sí</label>
+        </div>
+        <div class="checkbox-group">
+          <input type="radio" id="contextoNo" name="contexto" value="no">
+          <label for="contextoNo">No</label>
+        </div>
+        <div class="checkbox-group">
+          <input type="radio" id="contextoNs" name="contexto" value="ns">
+          <label for="contextoNs">No estoy seguro</label>
+        </div>
+      </div>
+
+      <button onclick="evaluarAmbiguedadesGenerales()">Evaluar Ambigüedades Generales</button>
+    </div>
+
+    <div id="resultado"></div>
+  </div>
+
+  <script>
+    function mostrarFormulario() {
+      const tipo = document.getElementById('tipoEvaluacion').value;
+      const formularioCondicional = document.getElementById('formularioCondicional');
+      const formularioGeneral = document.getElementById('formularioGeneral');
+
+      // Ocultar todos los formularios
+      formularioCondicional.classList.remove('activo');
+      formularioGeneral.classList.remove('activo');
+
+      // Mostrar el formulario seleccionado
+      if (tipo === 'condicional') {
+        formularioCondicional.classList.add('activo');
+        actualizarTextoDinamico();
+      } else if (tipo === 'general') {
+        formularioGeneral.classList.add('activo');
+      }
+
+      // Limpiar resultado anterior
+      document.getElementById('resultado').innerHTML = '';
+    }
+
+    function actualizarTextoDinamico() {
+      const antecedente = document.getElementById('antecedente').value.trim() || '...';
+      const consecuente = document.getElementById('consecuente').value.trim() || '...';
+
+      // Actualiza todos los elementos que muestran el antecedente
+      document.querySelectorAll('.dynamic-antecedente').forEach(el => {
+        el.textContent = `"${antecedente}"`;
+      });
+
+      // Actualiza todos los elementos que muestran el consecuente
+      document.querySelectorAll('.dynamic-consecuente').forEach(el => {
+        el.textContent = `"${consecuente}"`;
+      });
+
+      // Actualiza dinámicamente las opciones del select
+      document.getElementById('opcionA').textContent = `A. Si la condición "${antecedente}" se cumple, ocurre la acción "${consecuente}" (suficiente)`;
+      document.getElementById('opcionB').textContent = `B. La acción "${consecuente}" ocurre solo si se cumple la condición "${antecedente}" (necesaria)`;
+    }
+
+    function evaluarAmbiguedadCondicional() {
+      const requisito = document.getElementById('requisito').value.trim();
+      const antecedente = document.getElementById('antecedente').value.trim();
+      const consecuente = document.getElementById('consecuente').value.trim();
+      const logica = document.querySelector('input[name="logica"]:checked')?.value;
+      const temporalidad = document.querySelector('input[name="temporalidad"]:checked')?.value;
+      const caso1 = document.getElementById('caso1').value;
+      const caso2 = document.getElementById('caso2').value;
+
+      let ambiguo = false;
+      let razones = [];
+
+      // Validar campos obligatorios
+      if (!requisito || !antecedente || !consecuente) {
+        alert("Por favor, complete todos los campos obligatorios.");
+        return;
+      }
+
+      // Ambigüedad de interpretación lógica
+      if (logica === "D") {
+        ambiguo = true;
+        razones.push("Ambigüedad de interpretación lógica: No está claro si la condición es suficiente, necesaria o ambas.");
+      }
+
+      if (caso1 === "ns" || caso2 === "ns") {
+        ambiguo = true;
+        razones.push("Ambigüedad de interpretación lógica: Incertidumbre en el comportamiento esperado en escenarios clave.");
+      }
+
+      // Ambigüedad semántica del condicional
+      if (caso1 === "si" && caso2 === "si") {
+        ambiguo = true;
+        razones.push(`Ambigüedad semántica: la consecuencia <span class="dynamic-text">"${consecuente}"</span> se espera tanto si ocurre como si no ocurre la condición <span class="dynamic-text">"${antecedente}"</span>.`);
+      }
+
+      // Contradicción entre lógica y consistencia
+      if (logica === "A" && caso1 === "si" && caso2 === "no") {
+        // Esto es consistente, no es ambiguo
+      } else if (logica === "A" && caso2 === "si") {
+        ambiguo = true;
+        razones.push("Contradicción lógica: has marcado la condición como suficiente, pero esperas que la consecuencia ocurra incluso sin la condición.");
+      }
+
+      // Ambigüedad temporal
+      if (temporalidad === "E") {
+        ambiguo = true;
+        razones.push("Ambigüedad temporal: No está claro cuándo debe ocurrir la consecuencia en relación con la condición.");
+      }
+
+      // Verificar si el requisito menciona explícitamente el tiempo
+      const tiempoExplicito = /\b(inmediatamente|después|mientras|cuando|durante|antes|luego|posteriormente|al instante|en el momento)\b/i.test(requisito);
+      if (!tiempoExplicito && temporalidad && temporalidad !== "D" && temporalidad !== "E") {
+        ambiguo = true;
+        razones.push("Temporalidad implícita no expresada: El requisito no menciona explícitamente cuándo debe ocurrir la consecuencia.");
+      }
+
+      mostrarResultado(requisito, ambiguo, razones, 'condicional', { antecedente, consecuente });
+    }
+
+    function evaluarAmbiguedadesGenerales() {
+      const requisito = document.getElementById('requisito').value.trim();
+
+      if (!requisito) {
+        alert("Por favor, escriba el requerimiento completo.");
+        return;
+      }
+
+      let ambiguedadesDetectadas = [];
+
+      // Verificar cada tipo de ambigüedad
+      const ambiguedades = [
+        { name: 'lexica', label: 'Ambigüedad léxica' },
+        { name: 'sintactica', label: 'Ambigüedad sintáctica' },
+        { name: 'referencial', label: 'Ambigüedad referencial' },
+        { name: 'cuantificadores', label: 'Ambigüedad por cuantificadores vagos' },
+        { name: 'vozPasiva', label: 'Ambigüedad por uso de voz pasiva' },
+        { name: 'contexto', label: 'Ambigüedad por contexto incompleto' }
+      ];
+
+      ambiguedades.forEach(amb => {
+        const valor = document.querySelector(`input[name="${amb.name}"]:checked`)?.value;
+        if (valor === 'si' || valor === 'ns') {
+          ambiguedadesDetectadas.push({
+            tipo: amb.label,
+            certeza: valor === 'si' ? 'Detectada' : 'Posible (no está seguro)'
+          });
+        }
+      });
+
+      const ambiguo = ambiguedadesDetectadas.length > 0;
+      mostrarResultado(requisito, ambiguo, ambiguedadesDetectadas, 'general');
+    }
+
+    function mostrarResultado(requisito, ambiguo, datos, tipo, extra = {}) {
+      const resultadoDiv = document.getElementById('resultado');
+      let resultadoHTML = `<h4>Resultado de la Evaluación:</h4>`;
+      resultadoHTML += `<p><strong>Requisito evaluado:</strong> ${requisito}</p>`;
+
+      if (tipo === 'condicional') {
+        resultadoHTML += `<p><strong>Condición (Antecedente):</strong> ${extra.antecedente}<br>`;
+        resultadoHTML += `<strong>Acción (Consecuente):</strong> ${extra.consecuente}</p>`;
+      }
+
+      if (ambiguo) {
+        resultadoHTML += `<strong>🔴 Requisito Ambiguo</strong><br>`;
+
+        if (tipo === 'condicional') {
+          resultadoHTML += `<p>Se han detectado las siguientes ambigüedades condicionales:</p><ul>` + datos.map(r => `<li>${r}</li>`).join('') + `</ul>`;
+        } else {
+          resultadoHTML += `<p>Se han detectado los siguientes requirement smells:</p><ul>` + datos.map(d => `<li><strong>${d.tipo}:</strong> ${d.certeza}</li>`).join('') + `</ul>`;
+        }
+
+        resultadoDiv.className = 'resultado ambiguo';
+      } else {
+        resultadoHTML += `<strong>🟢 Requisito No Ambiguo</strong><br>`;
+
+        if (tipo === 'condicional') {
+          resultadoHTML += `<p>Según sus respuestas, no se detectaron ambigüedades condicionales. El comportamiento esperado es claro.</p>`;
+        } else {
+          resultadoHTML += `<p>No se detectaron requirement smells relacionados con ambigüedades generales.</p>`;
+        }
+
+        resultadoDiv.className = 'resultado no-ambiguo';
+      }
+
+      resultadoDiv.innerHTML = resultadoHTML;
+    }
+
+    // Inicializar
+    window.onload = function () {
+      mostrarFormulario();
+    };
+  </script>
+
+</body>
+
+</html>
